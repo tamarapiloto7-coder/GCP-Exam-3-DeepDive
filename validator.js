@@ -1,0 +1,8 @@
+window.AnswerValidator=(()=>{
+const norm=s=>String(s||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim().replace(/\s+/g,' ');
+function distance(a,b){let prev=Array.from({length:b.length+1},(_,i)=>i);for(let i=1;i<=a.length;i++){let cur=[i];for(let j=1;j<=b.length;j++)cur[j]=Math.min(cur[j-1]+1,prev[j]+1,prev[j-1]+(a[i-1]!==b[j-1]));prev=cur}return prev[b.length]}
+const risky=new Set(['major','minor','medial','lateral','superior','inferior','anterior','posterior','left','right','internal','external','longus','brevis','profundus','superficialis','radial','ulnar','ii','iii','iv','vi','vii','viii','ix','xi','xii']);
+function unsafe(a,b){let A=new Set(a.split(' ')),B=new Set(b.split(' '));for(let w of risky)if(A.has(w)!==B.has(w))return true;return false}
+function exact(q,raw){let n=norm(raw);if(!n)return null;for(const a of q.answers){for(const v of [a.canonical,...(a.aliases||[])])if(norm(v)===n)return a}return null}
+function suggestions(q,raw){const n=norm(raw);if(n.length<5)return [];let hits=[];for(const a of q.answers){let best=Infinity;for(const v of [a.canonical,...(a.aliases||[])]){const m=norm(v);if(unsafe(n,m))continue;let d=distance(n,m);if(d<best)best=d}let limit=n.length<9?1:2;if(best>0&&best<=limit)hits.push({answer:a,distance:best})}return hits.sort((a,b)=>a.distance-b.distance).slice(0,3)}
+return {norm,exact,suggestions};})();
